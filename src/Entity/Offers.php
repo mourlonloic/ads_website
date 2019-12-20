@@ -17,28 +17,76 @@ class Offers
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Users", inversedBy="offers")
-     */
-    private $user;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Ads", inversedBy="offers")
-     */
-    private $ad;
-
-    /**
      * @ORM\Column(type="decimal", precision=10, scale=2)
      */
     private $price;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $message;
 
     /**
      * @ORM\Column(type="datetime")
      */
     private $offerDate;
 
+
+    /**
+     * Relationship
+     */
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Users", inversedBy="offers")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $user;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Ads", inversedBy="offers")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $ad;
+
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getPrice(): ?string
+    {
+        return $this->price;
+    }
+
+    public function setPrice(?string $price): self
+    {
+        $this->price = $price;
+
+        return $this;
+    }
+
+    public function getMessage(): ?string
+    {
+        return $this->message;
+    }
+
+    public function setMessage(?string $message): self
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    public function getOfferDate(): ?\DateTimeInterface
+    {
+        return $this->offerDate;
+    }
+
+    public function setOfferDate(\DateTimeInterface $offerDate): self
+    {
+        $this->offerDate = $offerDate;
+
+        return $this;
     }
 
     public function getUser(): ?Users
@@ -61,30 +109,6 @@ class Offers
     public function setAd(?Ads $ad): self
     {
         $this->ad = $ad;
-
-        return $this;
-    }
-
-    public function getPrice(): ?string
-    {
-        return $this->price;
-    }
-
-    public function setPrice(string $price): self
-    {
-        $this->price = $price;
-
-        return $this;
-    }
-
-    public function getOfferDate(): ?\DateTimeInterface
-    {
-        return $this->offerDate;
-    }
-
-    public function setOfferDate(\DateTimeInterface $offerDate): self
-    {
-        $this->offerDate = $offerDate;
 
         return $this;
     }

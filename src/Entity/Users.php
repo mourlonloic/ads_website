@@ -6,15 +6,16 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\UuidInterface as UUID;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\UsersRepository")
  * @ORM\HasLifecycleCallbacks()
+ * @UniqueEntity(fields={"email"}, message="There is already an account with this email")
  */
 class Users implements UserInterface
 {
-
     /**
      * @var \Ramsey\Uuid\UuidInterface
      *
@@ -62,68 +63,84 @@ class Users implements UserInterface
     private $phone;
 
     /**
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="date")
      */
     private $birthday;
 
     /**
-     * @ORM\Column(type="string", length=2, options={"fixed" = true})
+     * @ORM\Column(type="string", length=2, options={"fixed"=true})
      */
     private $language;
+
+    
+    /**
+     * Flags
+     */
 
     /**
      * @ORM\Column(type="boolean")
      */
-    private $is_active = false;
+    private $isActive = false;
+
+    
+    /**
+     * Tokens
+     */
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private $activation_token;
+    private $activationToken;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private $password_token;
+    private $passwordtoken;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $passwor_token_expiration;
+    private $passwordTokenExpiration;
+
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Offers", mappedBy="user")
+     * Relationship
      */
-    private $offers;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Media", mappedBy="user")
+     * @ORM\ManyToMany(targetEntity="App\Entity\Ads")
+     * @ORM\JoinTable(name="favorites")
      */
-    private $media;
+    private $favorites;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Media", inversedBy="users")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Medias", inversedBy="users")
      */
     private $picture;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Adresses", inversedBy="users")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Addresses")
      */
-    private $adress;
+    private $address;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Ads", mappedBy="createdBy")
+     * @ORM\OneToMany(targetEntity="App\Entity\Ads", mappedBy="createdBy", orphanRemoval=true)
      */
     private $ads;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Offers", mappedBy="user", orphanRemoval=true)
+     */
+    private $offers;
+
     public function __construct()
     {
-        $this->offers = new ArrayCollection();
-        $this->media = new ArrayCollection();
+        $this->favorites = new ArrayCollection();
         $this->ads = new ArrayCollection();
+        $this->offers = new ArrayCollection();
     }
 
-    public function getId(): ?Uuid
+    public function getId(): ?uuid
     {
         return $this->id;
     }
@@ -229,9 +246,10 @@ class Users implements UserInterface
     {
         return $this->screenname;
     }
-/**
- * @ORM\PrePersist
- */
+
+    /**
+     * @ORM\PrePersist
+     */
     public function setScreenname(): self
     {
         $this->screenname = $this->firstname;
@@ -279,48 +297,105 @@ class Users implements UserInterface
 
     public function getIsActive(): ?bool
     {
-        return $this->is_active;
+        return $this->isActive;
     }
 
-    public function setIsActive(bool $is_active): self
+    public function setIsActive(bool $isActive): self
     {
-        $this->is_active = $is_active;
+        $this->isActive = $isActive;
 
         return $this;
     }
 
     public function getActivationToken(): ?string
     {
-        return $this->activation_token;
+        return $this->activationToken;
     }
 
-    public function setActivationToken(?string $activation_token): self
+    public function setActivationToken(?string $activationToken): self
     {
-        $this->activation_token = $activation_token;
+        $this->activationToken = $activationToken;
 
         return $this;
     }
 
-    public function getPasswordToken(): ?string
+    public function getPasswordtoken(): ?string
     {
-        return $this->password_token;
+        return $this->passwordtoken;
     }
 
-    public function setPasswordToken(?string $password_token): self
+    public function setPasswordtoken(?string $passwordtoken): self
     {
-        $this->password_token = $password_token;
+        $this->passwordtoken = $passwordtoken;
 
         return $this;
     }
 
-    public function getPassworTokenExpiration(): ?\DateTimeInterface
+    public function getPasswordTokenExpiration(): ?\DateTimeInterface
     {
-        return $this->passwor_token_expiration;
+        return $this->passwordTokenExpiration;
     }
 
-    public function setPassworTokenExpiration(?\DateTimeInterface $passwor_token_expiration): self
+    public function setPasswordTokenExpiration(?\DateTimeInterface $passwordTokenExpiration): self
     {
-        $this->passwor_token_expiration = $passwor_token_expiration;
+        $this->passwordTokenExpiration = $passwordTokenExpiration;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Ads[]
+     */
+    public function getAds(): Collection
+    {
+        return $this->ads;
+    }
+
+    public function addAd(Ads $ad): self
+    {
+        if (!$this->ads->contains($ad)) {
+            $this->ads[] = $ad;
+            $ad->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAd(Ads $ad): self
+    {
+        if ($this->ads->contains($ad)) {
+            $this->ads->removeElement($ad);
+            // set the owning side to null (unless already changed)
+            if ($ad->getCreatedBy() === $this) {
+                $ad->setCreatedBy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Ads[]
+     */
+    public function getFavorites(): Collection
+    {
+        return $this->favorites;
+    }
+
+    public function addFavorite(Ads $favorite): self
+    {
+        if (!$this->favorites->contains($favorite)) {
+            $this->favorites[] = $favorite;
+        }
+
+        return $this;
+    }
+
+    public function removeFavorite(Ads $favorite): self
+    {
+        if ($this->favorites->contains($favorite)) {
+            $this->favorites->removeElement($favorite);
+        }
 
         return $this;
     }
@@ -356,88 +431,26 @@ class Users implements UserInterface
         return $this;
     }
 
-    /**
-     * @return Collection|Media[]
-     */
-    public function getMedia(): Collection
-    {
-        return $this->media;
-    }
-
-    public function addMedium(Media $medium): self
-    {
-        if (!$this->media->contains($medium)) {
-            $this->media[] = $medium;
-            $medium->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeMedium(Media $medium): self
-    {
-        if ($this->media->contains($medium)) {
-            $this->media->removeElement($medium);
-            // set the owning side to null (unless already changed)
-            if ($medium->getUser() === $this) {
-                $medium->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
-    public function getPicture(): ?Media
+    public function getPicture(): ?Medias
     {
         return $this->picture;
     }
 
-    public function setPicture(?Media $picture): self
+    public function setPicture(?Medias $picture): self
     {
         $this->picture = $picture;
 
         return $this;
     }
 
-    public function getAdress(): ?Adresses
+    public function getAddress(): ?Addresses
     {
-        return $this->adress;
+        return $this->address;
     }
 
-    public function setAdress(?Adresses $adress): self
+    public function setAddress(?Addresses $address): self
     {
-        $this->adress = $adress;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|Ads[]
-     */
-    public function getAds(): Collection
-    {
-        return $this->ads;
-    }
-
-    public function addAd(Ads $ad): self
-    {
-        if (!$this->ads->contains($ad)) {
-            $this->ads[] = $ad;
-            $ad->setCreatedBy($this);
-        }
-
-        return $this;
-    }
-
-    public function removeAd(Ads $ad): self
-    {
-        if ($this->ads->contains($ad)) {
-            $this->ads->removeElement($ad);
-            // set the owning side to null (unless already changed)
-            if ($ad->getCreatedBy() === $this) {
-                $ad->setCreatedBy(null);
-            }
-        }
+        $this->address = $address;
 
         return $this;
     }

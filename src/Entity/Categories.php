@@ -5,6 +5,7 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\CategoriesRepository")
@@ -24,12 +25,13 @@ class Categories
     private $name;
 
     /**
-     * @ORM\Column(type="string", length=30, nullable=true)
+     * @ORM\Column(type="string", length=30)
+     * @Gedmo\Slug(fields={"name"})
      */
     private $slug;
 
     /**
-     * @ORM\Column(type="string", length=7)
+     * @ORM\Column(type="string", length=7, options={"fixed"=true})
      */
     private $color;
 
@@ -65,7 +67,7 @@ class Categories
         return $this->slug;
     }
 
-    public function setSlug(?string $slug): self
+    public function setSlug(string $slug): self
     {
         $this->slug = $slug;
 
